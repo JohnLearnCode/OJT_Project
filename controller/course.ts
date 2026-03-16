@@ -4,6 +4,7 @@ import { StatusCodes } from 'http-status-codes';
 import { CreateCourseRequest, UpdateCourseRequest, CourseResponse } from '../types/course/request.js';
 import { AuthMessage } from '../types/auth/enum.js';
 import { ResponseHelper } from '../utils/response.js';
+import { JwtPayload } from '../utils/jwt.js';
 
 /**
  * Create a new course (Admin only)
@@ -14,10 +15,23 @@ export const createCourse = async (
   next: NextFunction
 ) => {
   try {
-    const course = await courseService.createCourse(req.body);
+    // Get admin ID from authenticated user (req.user được set bởi requireAuth middleware)
+    const user = req.user as JwtPayload;
+    const adminId = user?.userId;
+    
+    if (!adminId) {
+      return ResponseHelper.error(
+        res,
+        'Không xác định được thông tin admin',
+        undefined,
+        StatusCodes.UNAUTHORIZED
+      );
+    }
+
+    const course = await courseService.createCourse(req.body, adminId);
     return ResponseHelper.success(
       res,
-      AuthMessage.SUCCESS_CREATE,
+      'Tạo khóa học thành công',
       course,
       StatusCodes.CREATED
     );

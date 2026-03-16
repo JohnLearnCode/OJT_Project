@@ -30,6 +30,10 @@ const router = Router();
  *         description:
  *           type: string
  *           example: Learn the basics of web development
+ *         createdBy:
+ *           type: string
+ *           description: ID của admin tạo khóa học
+ *           example: 507f1f77bcf86cd799439012
  *         createdAt:
  *           type: string
  *           format: date-time
