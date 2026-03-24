@@ -11,7 +11,7 @@ export interface User extends BaseEntity {
   email: string;
   password: string;
   name: string;
-  phoneNumber?: string;
+  phoneNumber: string;
   createdAt: Date;
   updatedAt: Date;
   role: 'teacher' | 'admin';
@@ -22,7 +22,7 @@ export interface RegisterUserRequest {
   email: string;
   password: string;
   name: string;
-  phoneNumber?: string;
+  phoneNumber: string;
   role: 'teacher' | 'admin';
 }
 
