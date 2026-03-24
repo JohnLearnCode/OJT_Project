@@ -10,13 +10,6 @@ export const registerAuth = async (authData: RegisterUserRequest): Promise<AuthR
     throw new Error('Email đã được sử dụng');
   }
 
-  // Check if phone number already exists
-  if (authData.phoneNumber) {
-    const existingUserByPhone = await authModel.findUserByPhoneNumber(authData.phoneNumber);
-    if (existingUserByPhone) {
-      throw new Error('Số điện thoại đã được sử dụng');
-    }
-  }
 
   const registerUser = await authModel.registerAuth(authData);
 

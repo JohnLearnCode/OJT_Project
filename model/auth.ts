@@ -21,13 +21,13 @@ export const registerAuth = async (authData: RegisterUserRequest): Promise<User 
       password: hashedPassword,
       name: authData.name,
       email: authData.email,
-      phoneNumber: authData.phoneNumber || null,
+      phoneNumber: authData.phoneNumber,
       role: authData.role,
       createdAt: new Date(),
       updatedAt: new Date()
     };
 
-    const result = await collection.insertOne(newAuth as unknown as User);
+    const result = await collection.insertOne(newAuth as User);
 
     if (result.insertedId) {
       return await collection.findOne({ _id: result.insertedId });

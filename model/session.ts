@@ -50,6 +50,36 @@ const checkTeacherConflict = async (
 };
 
 /**
+ * Check if course exceeds maximum sessions per day (2 sessions max)
+ */
+const checkCourseDailyLimit = async (
+  courseId: ObjectId,
+  sessionDate: Date,
+  excludeSessionId?: ObjectId
+): Promise<{ isValid: boolean; count: number }> => {
+  const collection = getCollection<Session>(CollectionName.SESSIONS);
+  
+  const normalizedDate = normalizeDate(sessionDate);
+  
+  const query: any = {
+    courseid: courseId,
+    session_date: normalizedDate,
+  };
+
+  // Exclude current session if updating
+  if (excludeSessionId) {
+    query._id = { $ne: excludeSessionId };
+  }
+
+  const count = await collection.countDocuments(query);
+  
+  return {
+    isValid: count < 2, // Chỉ cho phép tối đa 2 buổi/ngày
+    count: count
+  };
+};
+
+/**
  * Check if course has conflict in the same location at the same time
  * Course ĐƯỢC PHÉP trùng thời gian nếu ở location (room) khác nhau
  * Course KHÔNG ĐƯỢC trùng thời gian trong cùng 1 location
@@ -192,7 +222,15 @@ export const createSession = async (sessionData: CreateSessionRequest): Promise<
       );
     }
 
-    // Check 3: Course + Location conflict - Khóa học có bị trùng trong cùng 1 phòng không?
+    // Check 3: Course daily limit - Khóa học có vượt quá 2 buổi/ngày không?
+    const courseDailyLimit = await checkCourseDailyLimit(courseId, normalizedDate);
+    if (!courseDailyLimit.isValid) {
+      throw new Error(
+        `Khóa học "${course.courseName}" đã đạt giới hạn tối đa 2 buổi học trong ngày ${normalizedDate.toLocaleDateString('vi-VN')}. Không thể tạo thêm buổi học`
+      );
+    }
+
+    // Check 4: Course + Location conflict - Khóa học có bị trùng trong cùng 1 phòng không?
     // Course ĐƯỢC PHÉP trùng thời gian nếu ở location khác nhau
     const hasCourseLocationConflict = await checkCourseLocationConflict(courseId, roomId, normalizedDate, timeSlot);
     if (hasCourseLocationConflict) {
@@ -390,6 +428,22 @@ export const updateSession = async (id: string, updateData: UpdateSessionRequest
     if (hasRoomConflict) {
       throw new Error(
         `Phòng "${room?.room_name}" đã được sử dụng vào khung giờ ${timeSlot} ngày ${sessionDate.toLocaleDateString('vi-VN')}. Vui lòng chọn phòng khác`
+      );
+    }
+  }
+
+  // Check course daily limit (if course or date changed)
+  if (updateData.courseid || updateData.session_date) {
+    // Fetch course name if not already fetched
+    if (!course) {
+      const courseCollection = getCollection<{ _id: ObjectId; courseName?: string }>(CollectionName.COURSES);
+      course = await courseCollection.findOne({ _id: courseId });
+    }
+
+    const courseDailyLimit = await checkCourseDailyLimit(courseId, sessionDate, sessionObjectId);
+    if (!courseDailyLimit.isValid) {
+      throw new Error(
+        `Khóa học "${course?.courseName}" đã đạt giới hạn tối đa 2 buổi học trong ngày ${sessionDate.toLocaleDateString('vi-VN')}. Không thể cập nhật session`
       );
     }
   }
