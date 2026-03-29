@@ -4,12 +4,12 @@ const options: swaggerJsdoc.Options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'EVCare API Documentation',
+      title: 'Learning Management API Documentation',
       version: '1.0.0',
-      description: 'API documentation cho hệ thống quản lý lịch học EVCare',
+      description: 'API documentation cho hệ thống quản lý lịch học',
       contact: {
-        name: 'EVCare Team',
-        email: 'support@evcare.com'
+        name: 'Development Team',
+        email: 'support@example.com'
       }
     },
     servers: [
@@ -18,7 +18,7 @@ const options: swaggerJsdoc.Options = {
         description: 'Development Server'
       },
       {
-        url: 'https://api.evcare.com',
+        url: 'https://api.example.com',
         description: 'Production Server'
       }
     ],

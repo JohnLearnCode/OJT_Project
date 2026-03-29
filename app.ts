@@ -24,7 +24,7 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { ResponseHelper } from './utils/response';
 
 /**
- * Express Application - EVCare Backend
+ * Express Application 
  */
 
 const app: Express = express();
@@ -71,7 +71,7 @@ app.use('/api/sessions', sessionRoutes);
 // Swagger documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: 'EVCare API Docs'
+  customSiteTitle: 'API Docs'
 }));
 
 // 404 handler
