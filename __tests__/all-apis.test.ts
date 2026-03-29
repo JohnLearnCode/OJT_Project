@@ -146,8 +146,7 @@ describe('All APIs Integration Tests', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           session_date: '2026-03-25',
-          starttime: '09:00-11:00',
-          endtime: '09:00-11:00',
+          time: '09:00-11:00',
           roomid: room1._id,
           courseid: course._id,
           userid: teacher1._id
@@ -164,8 +163,7 @@ describe('All APIs Integration Tests', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           session_date: '2026-03-25',
-          starttime: '09:00-11:00',
-          endtime: '09:00-11:00',
+          time: '09:00-11:00',
           roomid: room1._id,
           courseid: course._id,
           userid: teacher1._id
@@ -177,8 +175,7 @@ describe('All APIs Integration Tests', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           session_date: '2026-03-25',
-          starttime: '09:00-11:00',
-          endtime: '09:00-11:00',
+          time: '09:00-11:00',
           roomid: room2._id, // Different room
           courseid: course._id,
           userid: teacher1._id // Same teacher
@@ -196,8 +193,7 @@ describe('All APIs Integration Tests', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           session_date: '2026-03-25',
-          starttime: '09:00-11:00',
-          endtime: '09:00-11:00',
+          time: '09:00-11:00',
           roomid: room1._id,
           courseid: course._id,
           userid: teacher1._id
@@ -209,8 +205,7 @@ describe('All APIs Integration Tests', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           session_date: '2026-03-25',
-          starttime: '09:00-11:00',
-          endtime: '09:00-11:00',
+          time: '09:00-11:00',
           roomid: room1._id, // Same room
           courseid: course._id,
           userid: teacher1._id
@@ -228,8 +223,7 @@ describe('All APIs Integration Tests', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           session_date: '2026-03-25',
-          starttime: '09:00-11:00',
-          endtime: '09:00-11:00',
+          time: '09:00-11:00',
           roomid: room1._id,
           courseid: course._id,
           userid: teacher1._id
@@ -252,8 +246,7 @@ describe('All APIs Integration Tests', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           session_date: '2026-03-25',
-          starttime: '09:00-11:00',
-          endtime: '09:00-11:00',
+          time: '09:00-11:00',
           roomid: room2._id, // Different room
           courseid: course._id, // Same course
           userid: teacher2._id // Different teacher
@@ -269,8 +262,7 @@ describe('All APIs Integration Tests', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           session_date: '2026-03-25',
-          starttime: '10:00-12:00', // Invalid
-          endtime: '10:00-12:00',
+          time: '10:00-12:00', // Invalid
           roomid: room1._id,
           courseid: course._id,
           userid: teacher1._id

@@ -28,14 +28,10 @@ const router = Router();
  *           type: string
  *           format: date
  *           example: '2026-03-20'
- *         starttime:
+ *         time:
  *           type: string
  *           enum: ['07:00-09:00', '09:00-11:00', '13:00-15:00', '15:00-17:00']
  *           example: '09:00-11:00'
- *         endtime:
- *           type: string
- *           enum: ['07:00-09:00', '09:00-11:00', '13:00-15:00', '15:00-17:00']
- *           example: '11:00-13:00'
  *         roomid:
  *           type: string
  *           example: 507f1f77bcf86cd799439011
@@ -45,6 +41,30 @@ const router = Router();
  *         userid:
  *           type: string
  *           example: 507f1f77bcf86cd799439011
+ *         location:
+ *           type: object
+ *           properties:
+ *             room_name:
+ *               type: string
+ *               example: Room A101
+ *             location:
+ *               type: string
+ *               example: Tầng 1, Tòa A
+ *         course:
+ *           type: object
+ *           properties:
+ *             courseName:
+ *               type: string
+ *               example: Web Development
+ *             description:
+ *               type: string
+ *               example: Learn web development fundamentals
+ *         user:
+ *           type: object
+ *           properties:
+ *             name:
+ *               type: string
+ *               example: Nguyễn Văn A
  *         createdAt:
  *           type: string
  *           format: date-time
@@ -73,8 +93,7 @@ router.use(requireAdmin);
  *             type: object
  *             required:
  *               - session_date
- *               - starttime
- *               - endtime
+ *               - time
  *               - roomid
  *               - courseid
  *               - userid
@@ -83,15 +102,10 @@ router.use(requireAdmin);
  *                 type: string
  *                 format: date
  *                 example: '2026-03-20'
- *               starttime:
+ *               time:
  *                 type: string
  *                 enum: ['07:00-09:00', '09:00-11:00', '13:00-15:00', '15:00-17:00']
  *                 example: '09:00-11:00'
- *                 description: Time slot must be one of the allowed values
- *               endtime:
- *                 type: string
- *                 enum: ['07:00-09:00', '09:00-11:00', '13:00-15:00', '15:00-17:00']
- *                 example: '11:00-13:00'
  *                 description: Time slot must be one of the allowed values
  *               roomid:
  *                 type: string
@@ -218,10 +232,7 @@ router.get('/:id', sessionController.getSessionById);
  *               session_date:
  *                 type: string
  *                 format: date
- *               starttime:
- *                 type: string
- *                 enum: ['07:00-09:00', '09:00-11:00', '13:00-15:00', '15:00-17:00']
- *               endtime:
+ *               time:
  *                 type: string
  *                 enum: ['07:00-09:00', '09:00-11:00', '13:00-15:00', '15:00-17:00']
  *               roomid:

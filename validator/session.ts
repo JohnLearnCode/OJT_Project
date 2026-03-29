@@ -9,16 +9,12 @@ const timeSlots = ['07:00-09:00', '09:00-11:00', '13:00-15:00', '15:00-17:00'] a
 
 export const createSessionSchema = Joi.object<CreateSessionRequest>({
   session_date: Joi.date().iso().required().messages({
-    'date.base': 'Ngày 회의 không hợp lệ',
-    'any.required': 'Ngày 회의 là bắt buộc'
+    'date.base': 'Ngày học không hợp lệ',
+    'any.required': 'Ngày học là bắt buộc'
   }),
-  starttime: Joi.string().valid(...timeSlots).required().messages({
-    'any.only': 'Giờ bắt đầu không hợp lệ. Các giá trị cho phép: 07:00-09:00, 09:00-11:00, 13:00-15:00, 15:00-17:00',
-    'any.required': 'Giờ bắt đầu là bắt buộc'
-  }),
-  endtime: Joi.string().valid(...timeSlots).required().messages({
-    'any.only': 'Giờ kết thúc không hợp lệ. Các giá trị cho phép: 07:00-09:00, 09:00-11:00, 13:00-15:00, 15:00-17:00',
-    'any.required': 'Giờ kết thúc là bắt buộc'
+  time: Joi.string().valid(...timeSlots).required().messages({
+    'any.only': 'Khung giờ không hợp lệ. Các giá trị cho phép: 07:00-09:00, 09:00-11:00, 13:00-15:00, 15:00-17:00',
+    'any.required': 'Khung giờ là bắt buộc'
   }),
   roomid: Joi.string().hex().length(24).required().messages({
     'string.hex': 'ID phòng không hợp lệ',
@@ -39,13 +35,10 @@ export const createSessionSchema = Joi.object<CreateSessionRequest>({
 
 export const updateSessionSchema = Joi.object<UpdateSessionRequest>({
   session_date: Joi.date().iso().optional().messages({
-    'date.base': 'Ngày 회의 không hợp lệ'
+    'date.base': 'Ngày học không hợp lệ'
   }),
-  starttime: Joi.string().valid(...timeSlots).optional().messages({
-    'any.only': 'Giờ bắt đầu không hợp lệ. Các giá trị cho phép: 07:00-09:00, 09:00-11:00, 13:00-15:00, 15:00-17:00'
-  }),
-  endtime: Joi.string().valid(...timeSlots).optional().messages({
-    'any.only': 'Giờ kết thúc không hợp lệ. Các giá trị cho phép: 07:00-09:00, 09:00-11:00, 13:00-15:00, 15:00-17:00'
+  time: Joi.string().valid(...timeSlots).optional().messages({
+    'any.only': 'Khung giờ không hợp lệ. Các giá trị cho phép: 07:00-09:00, 09:00-11:00, 13:00-15:00, 15:00-17:00'
   }),
   roomid: Joi.string().hex().length(24).optional().messages({
     'string.hex': 'ID phòng không hợp lệ',

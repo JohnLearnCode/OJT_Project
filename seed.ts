@@ -30,16 +30,16 @@ async function seedDatabase() {
     
     const users = [
       {
-        email: 'admin@evcare.com',
+        email: 'admin@example.com',
         password: hashedPassword,
-        name: 'Admin EVCare',
+        name: 'Admin',
         phoneNumber: '0901234567',
         role: 'admin',
         createdAt: new Date(),
         updatedAt: new Date()
       },
       {
-        email: 'teacher1@evcare.com',
+        email: 'teacher1@example.com',
         password: hashedPassword,
         name: 'Nguyễn Văn A',
         phoneNumber: '0912345678',
@@ -48,7 +48,7 @@ async function seedDatabase() {
         updatedAt: new Date()
       },
       {
-        email: 'teacher2@evcare.com',
+        email: 'teacher2@example.com',
         password: hashedPassword,
         name: 'Trần Thị B',
         phoneNumber: '0923456789',
@@ -57,7 +57,7 @@ async function seedDatabase() {
         updatedAt: new Date()
       },
       {
-        email: 'teacher3@evcare.com',
+        email: 'teacher3@example.com',
         password: hashedPassword,
         name: 'Lê Văn C',
         phoneNumber: '0934567890',
@@ -173,8 +173,7 @@ async function seedDatabase() {
       // Ngày 1
       {
         session_date: getDate(1),
-        starttime: timeSlots[0],
-        endtime: timeSlots[0],
+        time: timeSlots[0],
         roomid: locationIds[0], // Room A101
         courseid: courseIds[0], // Lập trình Web
         userid: userIds[1], // Teacher 1
@@ -183,8 +182,7 @@ async function seedDatabase() {
       },
       {
         session_date: getDate(1),
-        starttime: timeSlots[1],
-        endtime: timeSlots[1],
+        time: timeSlots[1],
         roomid: locationIds[1], // Room A102
         courseid: courseIds[1], // React
         userid: userIds[2], // Teacher 2
@@ -193,8 +191,7 @@ async function seedDatabase() {
       },
       {
         session_date: getDate(1),
-        starttime: timeSlots[2],
-        endtime: timeSlots[2],
+        time: timeSlots[2],
         roomid: locationIds[0], // Room A101
         courseid: courseIds[2], // Node.js
         userid: userIds[3], // Teacher 3
@@ -205,8 +202,7 @@ async function seedDatabase() {
       // Ngày 2
       {
         session_date: getDate(2),
-        starttime: timeSlots[0],
-        endtime: timeSlots[0],
+        time: timeSlots[0],
         roomid: locationIds[2], // Room A201
         courseid: courseIds[3], // Database
         userid: userIds[1], // Teacher 1
@@ -215,8 +211,7 @@ async function seedDatabase() {
       },
       {
         session_date: getDate(2),
-        starttime: timeSlots[1],
-        endtime: timeSlots[1],
+        time: timeSlots[1],
         roomid: locationIds[3], // Room B101
         courseid: courseIds[4], // DevOps
         userid: userIds[2], // Teacher 2
@@ -225,8 +220,7 @@ async function seedDatabase() {
       },
       {
         session_date: getDate(2),
-        starttime: timeSlots[3],
-        endtime: timeSlots[3],
+        time: timeSlots[3],
         roomid: locationIds[4], // Lab 301
         courseid: courseIds[0], // Lập trình Web
         userid: userIds[3], // Teacher 3
@@ -237,8 +231,7 @@ async function seedDatabase() {
       // Ngày 3
       {
         session_date: getDate(3),
-        starttime: timeSlots[0],
-        endtime: timeSlots[0],
+        time: timeSlots[0],
         roomid: locationIds[0], // Room A101
         courseid: courseIds[1], // React
         userid: userIds[1], // Teacher 1
@@ -247,8 +240,7 @@ async function seedDatabase() {
       },
       {
         session_date: getDate(3),
-        starttime: timeSlots[2],
-        endtime: timeSlots[2],
+        time: timeSlots[2],
         roomid: locationIds[1], // Room A102
         courseid: courseIds[2], // Node.js
         userid: userIds[2], // Teacher 2
@@ -265,13 +257,13 @@ async function seedDatabase() {
     console.log('\n✅ SEED DATA HOÀN TẤT!\n');
     console.log('📊 Tổng kết:');
     console.log(`   👥 Users: ${userIds.length}`);
-    console.log(`      - Admin: 1 (admin@evcare.com / 123456)`);
+    console.log(`      - Admin: 1 (admin@example.com / 123456)`);
     console.log(`      - Teachers: ${userIds.length - 1}`);
     console.log(`   📚 Courses: ${courseIds.length}`);
     console.log(`   📍 Locations: ${locationIds.length}`);
     console.log(`   📅 Sessions: ${sessionIds.length}`);
     console.log('\n💡 Thông tin đăng nhập:');
-    console.log('   Email: admin@evcare.com');
+    console.log('   Email: admin@example.com');
     console.log('   Password: 123456');
     console.log('\n🚀 Bắt đầu server: npm start');
     console.log('📚 Swagger UI: http://localhost:3000/api-docs\n');

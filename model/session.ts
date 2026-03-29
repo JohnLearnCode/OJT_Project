@@ -1,6 +1,6 @@
 import { getCollection } from "../config/database";
 import { CollectionName } from "../types/common/enums";
-import { CreateSessionRequest, UpdateSessionRequest, SessionResponse, Session } from "../types/session/request";
+import { CreateSessionRequest, UpdateSessionRequest, SessionResponse, Session, SessionWithDetails } from "../types/session/request";
 import { ObjectId } from "mongodb";
 
 /**
@@ -37,7 +37,7 @@ const checkTeacherConflict = async (
   const query: any = {
     userid: teacherId,
     session_date: normalizedDate,
-    starttime: timeSlot,
+    time: timeSlot,
   };
 
   // Exclude current session if updating
@@ -99,7 +99,7 @@ const checkCourseLocationConflict = async (
     courseid: courseId,
     roomid: roomId,
     session_date: normalizedDate,
-    starttime: timeSlot,
+    time: timeSlot,
   };
 
   // Exclude current session if updating
@@ -127,7 +127,7 @@ const checkRoomConflict = async (
   const query: any = {
     roomid: roomId,
     session_date: normalizedDate,
-    starttime: timeSlot,
+    time: timeSlot,
   };
 
   // Exclude current session if updating
@@ -142,22 +142,13 @@ const checkRoomConflict = async (
 /**
  * Create a new session với business logic validation
  */
-export const createSession = async (sessionData: CreateSessionRequest): Promise<Session | null> => {
+export const createSession = async (sessionData: CreateSessionRequest): Promise<SessionWithDetails | null> => {
   try {
     const collection = getCollection<Session>(CollectionName.SESSIONS);
 
-    // 1. Validate time slots
-    if (!isValidTimeSlot(sessionData.starttime)) {
-      throw new Error('Khung giờ bắt đầu không hợp lệ. Chỉ được chọn: 07:00-09:00, 09:00-11:00, 13:00-15:00, 15:00-17:00');
-    }
-
-    if (!isValidTimeSlot(sessionData.endtime)) {
-      throw new Error('Khung giờ kết thúc không hợp lệ. Chỉ được chọn: 07:00-09:00, 09:00-11:00, 13:00-15:00, 15:00-17:00');
-    }
-
-    // Starttime và endtime phải giống nhau (mỗi session chỉ 1 time slot)
-    if (sessionData.starttime !== sessionData.endtime) {
-      throw new Error('Khung giờ bắt đầu và kết thúc phải giống nhau. Mỗi buổi học là 1 khung giờ cố định');
+    // 1. Validate time slot
+    if (!isValidTimeSlot(sessionData.time)) {
+      throw new Error('Khung giờ không hợp lệ. Chỉ được chọn: 07:00-09:00, 09:00-11:00, 13:00-15:00, 15:00-17:00');
     }
 
     // 2. Check if session_date is valid
@@ -202,7 +193,7 @@ export const createSession = async (sessionData: CreateSessionRequest): Promise<
     const teacherId = new ObjectId(sessionData.userid);
     const courseId = new ObjectId(sessionData.courseid);
     const roomId = new ObjectId(sessionData.roomid);
-    const timeSlot = sessionData.starttime;
+    const timeSlot = sessionData.time;
 
     // 4. BUSINESS LOGIC VALIDATIONS
 
@@ -242,8 +233,7 @@ export const createSession = async (sessionData: CreateSessionRequest): Promise<
     // 5. All validations passed - Create session
     const newSession = {
       session_date: normalizedDate,
-      starttime: sessionData.starttime,
-      endtime: sessionData.endtime,
+      time: sessionData.time,
       roomid: roomId,
       courseid: courseId,
       userid: teacherId,
@@ -254,7 +244,61 @@ export const createSession = async (sessionData: CreateSessionRequest): Promise<
     const result = await collection.insertOne(newSession as unknown as Session);
 
     if (result.insertedId) {
-      return await collection.findOne({ _id: result.insertedId });
+      // Use aggregation to join location, course, and user information
+      const sessionWithDetails = await collection.aggregate([
+        { $match: { _id: result.insertedId } },
+        {
+          $lookup: {
+            from: CollectionName.LOCATIONS,
+            localField: 'roomid',
+            foreignField: '_id',
+            as: 'locationInfo'
+          }
+        },
+        { $unwind: { path: '$locationInfo', preserveNullAndEmptyArrays: true } },
+        {
+          $lookup: {
+            from: CollectionName.COURSES,
+            localField: 'courseid',
+            foreignField: '_id',
+            as: 'courseInfo'
+          }
+        },
+        { $unwind: { path: '$courseInfo', preserveNullAndEmptyArrays: true } },
+        {
+          $lookup: {
+            from: CollectionName.USERS,
+            localField: 'userid',
+            foreignField: '_id',
+            as: 'userInfo'
+          }
+        },
+        { $unwind: { path: '$userInfo', preserveNullAndEmptyArrays: true } },
+        {
+          $project: {
+            session_date: 1,
+            time: 1,
+            roomid: 1,
+            courseid: 1,
+            userid: 1,
+            createdAt: 1,
+            updatedAt: 1,
+            location: {
+              room_name: '$locationInfo.room_name',
+              location: '$locationInfo.location'
+            },
+            course: {
+              courseName: '$courseInfo.courseName',
+              description: '$courseInfo.description'
+            },
+            user: {
+              name: '$userInfo.name'
+            }
+          }
+        }
+      ]).toArray();
+
+      return (sessionWithDetails[0] as SessionWithDetails) || null;
     }
 
     return null;
@@ -265,22 +309,129 @@ export const createSession = async (sessionData: CreateSessionRequest): Promise<
 };
 
 /**
- * Get all sessions
+ * Get all sessions with joined details from location, course, and user
  */
-export const getAllSessions = async (): Promise<Session[]> => {
+export const getAllSessions = async (): Promise<SessionWithDetails[]> => {
   const collection = getCollection<Session>(CollectionName.SESSIONS);
-  return await collection.find().toArray();
+  
+  const sessionsWithDetails = await collection.aggregate([
+    {
+      $lookup: {
+        from: CollectionName.LOCATIONS,
+        localField: 'roomid',
+        foreignField: '_id',
+        as: 'locationInfo'
+      }
+    },
+    { $unwind: { path: '$locationInfo', preserveNullAndEmptyArrays: true } },
+    {
+      $lookup: {
+        from: CollectionName.COURSES,
+        localField: 'courseid',
+        foreignField: '_id',
+        as: 'courseInfo'
+      }
+    },
+    { $unwind: { path: '$courseInfo', preserveNullAndEmptyArrays: true } },
+    {
+      $lookup: {
+        from: CollectionName.USERS,
+        localField: 'userid',
+        foreignField: '_id',
+        as: 'userInfo'
+      }
+    },
+    { $unwind: { path: '$userInfo', preserveNullAndEmptyArrays: true } },
+    {
+      $project: {
+        session_date: 1,
+        time: 1,
+        roomid: 1,
+        courseid: 1,
+        userid: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        location: {
+          room_name: '$locationInfo.room_name',
+          location: '$locationInfo.location'
+        },
+        course: {
+          courseName: '$courseInfo.courseName',
+          description: '$courseInfo.description'
+        },
+        user: {
+          name: '$userInfo.name'
+        }
+      }
+    }
+  ]).toArray();
+
+  return sessionsWithDetails as SessionWithDetails[];
 };
 
 /**
- * Get session by ID
+ * Get session by ID with joined details from location, course, and user
  */
-export const getSessionById = async (id: string): Promise<Session | null> => {
+export const getSessionById = async (id: string): Promise<SessionWithDetails | null> => {
   if (!ObjectId.isValid(id)) {
     return null;
   }
   const collection = getCollection<Session>(CollectionName.SESSIONS);
-  return await collection.findOne({ _id: new ObjectId(id) });
+  
+  const sessionWithDetails = await collection.aggregate([
+    { $match: { _id: new ObjectId(id) } },
+    {
+      $lookup: {
+        from: CollectionName.LOCATIONS,
+        localField: 'roomid',
+        foreignField: '_id',
+        as: 'locationInfo'
+      }
+    },
+    { $unwind: { path: '$locationInfo', preserveNullAndEmptyArrays: true } },
+    {
+      $lookup: {
+        from: CollectionName.COURSES,
+        localField: 'courseid',
+        foreignField: '_id',
+        as: 'courseInfo'
+      }
+    },
+    { $unwind: { path: '$courseInfo', preserveNullAndEmptyArrays: true } },
+    {
+      $lookup: {
+        from: CollectionName.USERS,
+        localField: 'userid',
+        foreignField: '_id',
+        as: 'userInfo'
+      }
+    },
+    { $unwind: { path: '$userInfo', preserveNullAndEmptyArrays: true } },
+    {
+      $project: {
+        session_date: 1,
+        time: 1,
+        roomid: 1,
+        courseid: 1,
+        userid: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        location: {
+          room_name: '$locationInfo.room_name',
+          location: '$locationInfo.location'
+        },
+        course: {
+          courseName: '$courseInfo.courseName',
+          description: '$courseInfo.description'
+        },
+        user: {
+          name: '$userInfo.name'
+        }
+      }
+    }
+  ]).toArray();
+
+  return (sessionWithDetails[0] as SessionWithDetails) || null;
 };
 
 /**
@@ -313,27 +464,12 @@ export const updateSession = async (id: string, updateData: UpdateSessionRequest
     updateObj.session_date = normalizeDate(sessionDate);
   }
 
-  // 2. Validate and update starttime if provided
-  if (updateData.starttime !== undefined) {
-    if (!isValidTimeSlot(updateData.starttime)) {
-      throw new Error('Khung giờ bắt đầu không hợp lệ. Chỉ được chọn: 07:00-09:00, 09:00-11:00, 13:00-15:00, 15:00-17:00');
+  // 2. Validate and update time if provided
+  if (updateData.time !== undefined) {
+    if (!isValidTimeSlot(updateData.time)) {
+      throw new Error('Khung giờ không hợp lệ. Chỉ được chọn: 07:00-09:00, 09:00-11:00, 13:00-15:00, 15:00-17:00');
     }
-    updateObj.starttime = updateData.starttime;
-  }
-
-  // 3. Validate and update endtime if provided
-  if (updateData.endtime !== undefined) {
-    if (!isValidTimeSlot(updateData.endtime)) {
-      throw new Error('Khung giờ kết thúc không hợp lệ. Chỉ được chọn: 07:00-09:00, 09:00-11:00, 13:00-15:00, 15:00-17:00');
-    }
-    updateObj.endtime = updateData.endtime;
-  }
-
-  // Check starttime và endtime phải giống nhau
-  const starttime = updateObj.starttime ?? existingSession.starttime;
-  const endtime = updateObj.endtime ?? existingSession.endtime;
-  if (starttime !== endtime) {
-    throw new Error('Khung giờ bắt đầu và kết thúc phải giống nhau. Mỗi buổi học là 1 khung giờ cố định');
+    updateObj.time = updateData.time;
   }
 
   // 4. Validate and update roomid if provided
@@ -380,7 +516,7 @@ export const updateSession = async (id: string, updateData: UpdateSessionRequest
 
   // Get final values (after update or keep existing)
   const sessionDate = updateObj.session_date ?? existingSession.session_date;
-  const timeSlot = starttime;
+  const timeSlot = updateObj.time ?? existingSession.time;
   const roomId = updateObj.roomid ?? existingSession.roomid;
   const courseId = updateObj.courseid ?? existingSession.courseid;
   const teacherId = updateObj.userid ?? existingSession.userid;
@@ -389,7 +525,7 @@ export const updateSession = async (id: string, updateData: UpdateSessionRequest
   // 7. BUSINESS LOGIC VALIDATIONS (only if relevant fields changed)
 
   // Check teacher conflict (if teacher, date, or time changed)
-  if (updateData.userid || updateData.session_date || updateData.starttime) {
+  if (updateData.userid || updateData.session_date || updateData.time) {
     // Fetch teacher name if not already fetched
     if (!teacher) {
       const userCollection = getCollection<{ _id: ObjectId; name?: string }>(CollectionName.USERS);
@@ -411,7 +547,7 @@ export const updateSession = async (id: string, updateData: UpdateSessionRequest
   }
 
   // Check room conflict (if room, date, or time changed)
-  if (updateData.roomid || updateData.session_date || updateData.starttime) {
+  if (updateData.roomid || updateData.session_date || updateData.time) {
     // Fetch room name if not already fetched
     if (!room) {
       const locationCollection = getCollection<{ _id: ObjectId; room_name?: string }>(CollectionName.LOCATIONS);
@@ -449,7 +585,7 @@ export const updateSession = async (id: string, updateData: UpdateSessionRequest
   }
 
   // Check course + location conflict (if course, room, date, or time changed)
-  if (updateData.courseid || updateData.roomid || updateData.session_date || updateData.starttime) {
+  if (updateData.courseid || updateData.roomid || updateData.session_date || updateData.time) {
     // Fetch course name if not already fetched
     if (!course) {
       const courseCollection = getCollection<{ _id: ObjectId; courseName?: string }>(CollectionName.COURSES);
