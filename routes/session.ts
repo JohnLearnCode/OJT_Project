@@ -4,6 +4,7 @@ import { validateBody } from '../middleware/validation.js';
 import { createSessionSchema, updateSessionSchema } from '../validator/session.js';
 import { requireAuth } from '../middleware/requireAuth.js';
 import { requireAdmin } from '../middleware/requiredAdmin.js';
+import { requireTeacher } from '../middleware/requireTeacher.js';
 
 const router = Router();
 
@@ -11,7 +12,7 @@ const router = Router();
  * @swagger
  * tags:
  *   name: Sessions
- *   description: Session/Schedule management (Admin only)
+ *   description: Session/Schedule management
  */
 
 /**
@@ -72,10 +73,6 @@ const router = Router();
  *           type: string
  *           format: date-time
  */
-
-// All routes require authentication and admin role
-router.use(requireAuth);
-router.use(requireAdmin);
 
 /**
  * @swagger
@@ -140,13 +137,13 @@ router.use(requireAdmin);
  *       403:
  *         description: Admin access required
  */
-router.post('/', validateBody(createSessionSchema), sessionController.createSession);
+router.post('/', requireAuth, requireAdmin, validateBody(createSessionSchema), sessionController.createSession);
 
 /**
  * @swagger
  * /sessions:
  *   get:
- *     summary: Get all sessions
+ *     summary: Get all sessions (Teacher & Admin)
  *     tags: [Sessions]
  *     security:
  *       - bearerAuth: []
@@ -168,14 +165,16 @@ router.post('/', validateBody(createSessionSchema), sessionController.createSess
  *                     $ref: '#/components/schemas/Session'
  *       401:
  *         description: Unauthorized
+ *       403:
+ *         description: Teacher or Admin access required
  */
-router.get('/', sessionController.getAllSessions);
+router.get('/', requireAuth, requireTeacher, sessionController.getAllSessions);
 
 /**
  * @swagger
  * /sessions/{id}:
  *   get:
- *     summary: Get session by ID
+ *     summary: Get session by ID (Teacher & Admin)
  *     tags: [Sessions]
  *     security:
  *       - bearerAuth: []
@@ -204,8 +203,10 @@ router.get('/', sessionController.getAllSessions);
  *         description: Session not found
  *       401:
  *         description: Unauthorized
+ *       403:
+ *         description: Teacher or Admin access required
  */
-router.get('/:id', sessionController.getSessionById);
+router.get('/:id', requireAuth, requireTeacher, sessionController.getSessionById);
 
 /**
  * @swagger
@@ -262,7 +263,7 @@ router.get('/:id', sessionController.getSessionById);
  *       401:
  *         description: Unauthorized
  */
-router.put('/:id', validateBody(updateSessionSchema), sessionController.updateSession);
+router.put('/:id', requireAuth, requireAdmin, validateBody(updateSessionSchema), sessionController.updateSession);
 
 /**
  * @swagger
@@ -287,6 +288,6 @@ router.put('/:id', validateBody(updateSessionSchema), sessionController.updateSe
  *       401:
  *         description: Unauthorized
  */
-router.delete('/:id', sessionController.deleteSession);
+router.delete('/:id', requireAuth, requireAdmin, sessionController.deleteSession);
 
 export default router;

@@ -9,12 +9,3 @@ import { ObjectId } from 'mongodb';
 export interface BaseEntity {
   _id: ObjectId;
 }
-
-export interface AuthenticateRequest extends Request {
-  user: {
-    _id: string;
-    role: string;
-    name: string;
-    email: string;
-  }
-}
