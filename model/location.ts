@@ -114,3 +114,11 @@ export const deleteLocation = async (id: string): Promise<boolean> => {
   const result = await collection.deleteOne({ _id: new ObjectId(id) });
   return result.deletedCount === 1;
 };
+
+/**
+ * Get location by room name
+ */
+export const getLocationByName = async (roomName: string): Promise<Location | null> => {
+  const collection = getCollection<Location>(CollectionName.LOCATIONS);
+  return await collection.findOne({ room_name: roomName });
+};
