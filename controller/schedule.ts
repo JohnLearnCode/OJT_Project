@@ -54,9 +54,12 @@ export const importSchedule = async (
       return ResponseHelper.error(res, 'No file uploaded', StatusCodes.BAD_REQUEST.toString());
     }
 
-    const result = await scheduleService.importScheduleFromExcel(req.file.buffer);
+      const result = await scheduleService.importScheduleFromExcel(
+          req.file.buffer.buffer as ArrayBuffer
+      );
 
-    if (!result.success) {
+
+      if (!result.success) {
       return ResponseHelper.error(res, result.message, StatusCodes.BAD_REQUEST.toString());
     }
 
@@ -116,6 +119,8 @@ export const exportSchedule = async (
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="schedule-${new Date().getTime()}.pdf"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+
     res.send(pdfBuffer);
   } catch (error) {
     next(error);
