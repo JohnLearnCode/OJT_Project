@@ -54,12 +54,11 @@ export const importSchedule = async (
       return ResponseHelper.error(res, 'No file uploaded', StatusCodes.BAD_REQUEST.toString());
     }
 
-      const result = await scheduleService.importScheduleFromExcel(
-          req.file.buffer.buffer as ArrayBuffer
-      );
+    const result = await scheduleService.importScheduleFromExcel(
+      req.file.buffer as unknown as ArrayBuffer
+    );
 
-
-      if (!result.success) {
+    if (!result.success) {
       return ResponseHelper.error(res, result.message, StatusCodes.BAD_REQUEST.toString());
     }
 
