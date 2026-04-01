@@ -1,23 +1,22 @@
-// routes/schedule.ts
 import { Router } from 'express';
-import * as scheduleController from '../controller/schedule.js';
-import { authMiddleware } from '../middleware/auth.js';
-import multer from 'multer';
+  import * as scheduleController from '../controller/schedule.js';
+  import { requireAdmin } from '../middleware/requiredAdmin.js';
+  import multer from 'multer';
 
-const router = Router();
-const upload = multer({ storage: multer.memoryStorage() });
+  const router = Router();
+  const upload = multer({ storage: multer.memoryStorage() });
 
-router.post(
-  '/import',
-  authMiddleware,
-  upload.single('file'),
-  scheduleController.importSchedule
-);
+  router.post(
+    '/import',
+    requireAdmin,
+    upload.single('file'),
+    scheduleController.importSchedule
+  );
 
-router.post(
-  '/export',
-  authMiddleware,
-  scheduleController.exportSchedule
-);
+  router.post(
+    '/export',
+    requireAdmin,
+    scheduleController.exportSchedule
+  );
 
-export default router;
+  export default router;

@@ -51,13 +51,13 @@ export const importSchedule = async (
 ) => {
   try {
     if (!req.file) {
-      return ResponseHelper.error(res, 'No file uploaded', StatusCodes.BAD_REQUEST);
+      return ResponseHelper.error(res, 'No file uploaded', StatusCodes.BAD_REQUEST.toString());
     }
 
     const result = await scheduleService.importScheduleFromExcel(req.file.buffer);
 
     if (!result.success) {
-      return ResponseHelper.error(res, result.message, StatusCodes.BAD_REQUEST);
+      return ResponseHelper.error(res, result.message, StatusCodes.BAD_REQUEST.toString());
     }
 
     return ResponseHelper.success(

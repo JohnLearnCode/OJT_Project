@@ -637,3 +637,43 @@ export const deleteSession = async (id: string): Promise<boolean> => {
   const result = await collection.deleteOne({ _id: new ObjectId(id) });
   return result.deletedCount === 1;
 };
+
+/**
+ * Check if there are conflicts for batch import (simplified version)
+ */
+export const checkConflicts = async (
+  teacherId: ObjectId,
+  locationId: ObjectId,
+  startTime: Date,
+  endTime: Date
+): Promise<{ hasConflict: boolean; message: string }> => {
+  try {
+    const collection = getCollection<Session>(CollectionName.SESSIONS);
+
+    // Extract time slot from start and end times
+    const startHours = String(startTime.getHours()).padStart(2, '0');
+    const startMinutes = String(startTime.getMinutes()).padStart(2, '0');
+    const endHours = String(endTime.getHours()).padStart(2, '0');
+    const endMinutes = String(endTime.getMinutes()).padStart(2, '0');
+    const timeSlot = `${startHours}:${startMinutes}-${endHours}:${endMinutes}`;
+
+    const normalizedDate = normalizeDate(startTime);
+
+    // Check teacher conflict
+    const teacherConflict = await checkTeacherConflict(teacherId, normalizedDate, timeSlot);
+    if (teacherConflict) {
+      return { hasConflict: true, message: 'Teacher has conflict at this time' };
+    }
+
+    // Check room conflict
+    const roomConflict = await checkRoomConflict(locationId, normalizedDate, timeSlot);
+    if (roomConflict) {
+      return { hasConflict: true, message: 'Room is not available at this time' };
+    }
+
+    return { hasConflict: false, message: 'No conflicts' };
+  } catch (error) {
+    console.error('Error checking conflicts:', error);
+    return { hasConflict: false, message: 'Error checking conflicts' };
+  }
+};

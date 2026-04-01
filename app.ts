@@ -17,7 +17,7 @@ import userRoutes from './routes/user';
 import courseRoutes from './routes/course';
 import locationRoutes from './routes/location';
 import sessionRoutes from './routes/session';
-
+import scheduleRoutes from './routes/schedule';
 
 // Import middleware
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
@@ -77,6 +77,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/locations', locationRoutes);
 app.use('/api/sessions', sessionRoutes);
+app.use('/api/schedule', scheduleRoutes);
 
 // Swagger documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
