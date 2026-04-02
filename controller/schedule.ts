@@ -6,7 +6,7 @@ import { ResponseHelper } from '../utils/response.js';
 
 /**
  * @swagger
- * /api/schedule/import:
+ * /schedule/import:
  *   post:
  *     summary: Import teaching schedule from Excel file
  *     description: Imports multiple teacher schedules from an Excel file. Rejects entire import if any conflicts found.
@@ -75,7 +75,7 @@ export const importSchedule = async (
 
 /**
  * @swagger
- * /api/schedule/export:
+ * /schedule/export:
  *   post:
  *     summary: Export teaching schedule to PDF
  *     description: Exports schedule to PDF for one or multiple teachers
