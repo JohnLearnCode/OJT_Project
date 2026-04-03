@@ -122,3 +122,11 @@ export const deleteCourse = async (id: string): Promise<boolean> => {
   const result = await collection.deleteOne({ _id: new ObjectId(id) });
   return result.deletedCount === 1;
 };
+
+/**
+ * Get course by name
+ */
+export const getCourseByName = async (name: string): Promise<Course | null> => {
+  const collection = getCollection<Course>(CollectionName.COURSES);
+  return await collection.findOne({ courseName: name });
+};

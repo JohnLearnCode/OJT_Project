@@ -130,3 +130,22 @@ export const deleteTeacher = async (id: string): Promise<boolean> => {
   const result = await collection.deleteOne({ _id: new ObjectId(id), role: 'teacher' });
   return result.deletedCount === 1;
 };
+
+/**
+ * Find user by name (searches all users regardless of role)
+ */
+export const findUserByName = async (name: string): Promise<User | null> => {
+  const collection = getCollection<User>(CollectionName.USERS);
+  return await collection.findOne({ name: name });
+};
+
+/**
+ * Get user by ID (searches all users regardless of role)
+ */
+export const getUserById = async (id: string): Promise<User | null> => {
+  if (!ObjectId.isValid(id)) {
+    return null;
+  }
+  const collection = getCollection<User>(CollectionName.USERS);
+  return await collection.findOne({ _id: new ObjectId(id) });
+};
