@@ -15,10 +15,8 @@ const isValidTimeSlot = (timeSlot: string): boolean => {
 /**
  * Normalize date to start of day (00:00:00) để so sánh chính xác
  */
-const normalizeDate = (date: Date): Date => {
-  const normalized = new Date(date);
-  normalized.setHours(0, 0, 0, 0);
-  return normalized;
+export const normalizeDate = (date: Date): Date => {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 0, 0, 0, 0));
 };
 
 /**
@@ -52,7 +50,7 @@ const checkTeacherConflict = async (
 /**
  * Check if course exceeds maximum sessions per day (2 sessions max)
  */
-const checkCourseDailyLimit = async (
+export const checkCourseDailyLimit = async (
   courseId: ObjectId,
   sessionDate: Date,
   excludeSessionId?: ObjectId
@@ -84,7 +82,7 @@ const checkCourseDailyLimit = async (
  * Course ĐƯỢC PHÉP trùng thời gian nếu ở location (room) khác nhau
  * Course KHÔNG ĐƯỢC trùng thời gian trong cùng 1 location
  */
-const checkCourseLocationConflict = async (
+export const checkCourseLocationConflict = async (
   courseId: ObjectId,
   roomId: ObjectId,
   sessionDate: Date,
