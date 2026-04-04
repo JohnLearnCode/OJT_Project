@@ -10,6 +10,65 @@ import * as sessionModel from '../model/session.js';
 import { Session } from '../types/session/request';
 import { ObjectId } from 'mongodb';
 
+const VALID_TIME_SLOTS = ['07:00-09:00', '09:00-11:00', '13:00-15:00', '15:00-17:00'];
+
+const extractTimeFromCell = (cell: any): string => {
+  if (!cell) return '';
+
+  if (cell instanceof Date) {
+    const hours = cell.getUTCHours();
+    const minutes = cell.getUTCMinutes();
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  }
+
+  if (typeof cell === 'object' && cell.text) {
+    const str = cell.text.toString().trim();
+    if (/^\d{1,2}:\d{2}/.test(str)) return str;
+  }
+
+  if (typeof cell === 'number') {
+    const totalMinutes = Math.round(cell * 24 * 60);
+    const hours = Math.floor(totalMinutes / 60) % 24;
+    const minutes = totalMinutes % 60;
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  }
+
+  const str = cell.toString().trim();
+  if (str.includes('GMT') || str.includes('1899')) {
+    try {
+      const date = new Date(str);
+      const hours = date.getUTCHours();
+      const minutes = date.getUTCMinutes();
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    } catch {
+      return str;
+    }
+  }
+
+  if (/^\d{1,2}:\d{2}/.test(str)) return str;
+
+  return str;
+};
+
+const extractDateFromCell = (cell: any): string => {
+  if (!cell) return '';
+  if (cell instanceof Date) {
+    const day = cell.getUTCDate();
+    const month = cell.getUTCMonth() + 1;
+    const year = cell.getUTCFullYear();
+    return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
+  }
+  return cell.toString().trim();
+};
+
+const normalizeTime = (time: string): string => {
+  const trimmed = time.trim();
+  const parts = trimmed.split(':');
+  const hours = parseInt(parts[0], 10);
+  const minutes = parts[1] ? parseInt(parts[1], 10) : 0;
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+};
+
 interface ExcelRow {
 teacherName: string;
 courseName: string;
@@ -40,9 +99,9 @@ try {
       teacherName: row.getCell(1).value?.toString() || '',
       courseName: row.getCell(2).value?.toString() || '',
       roomName: row.getCell(3).value?.toString() || '',
-      date: row.getCell(4).value?.toString() || '',
-      startTime: row.getCell(5).value?.toString() || '',
-      endTime: row.getCell(6).value?.toString() || ''
+      date: extractDateFromCell(row.getCell(4).value),
+      startTime: extractTimeFromCell(row.getCell(5).value),
+      endTime: extractTimeFromCell(row.getCell(6).value)
     };
 
     if (excelRow.teacherName && excelRow.courseName && excelRow.roomName && excelRow.date && excelRow.startTime && excelRow.endTime) {
@@ -84,15 +143,34 @@ try {
       continue;
     }
 
-    // Parse date and times
-    const sessionDate = new Date(excelRow.date);
+    // Parse date
+    let sessionDate: Date;
+    const dateStr = excelRow.date;
+    if (dateStr.includes('/')) {
+      const [day, month, year] = dateStr.split('/').map(Number);
+      sessionDate = new Date(year, month - 1, day);
+    } else {
+      sessionDate = new Date(dateStr);
+    }
     if (isNaN(sessionDate.getTime())) {
       validationErrors.push(`Row ${i + 2}: Invalid date format`);
       continue;
     }
 
-    const [startHour, startMin] = excelRow.startTime.split(':').map(Number);
-    const [endHour, endMin] = excelRow.endTime.split(':').map(Number);
+    // Normalize start/end times and combine into time slot
+    const normalizedStart = normalizeTime(excelRow.startTime);
+    const normalizedEnd = normalizeTime(excelRow.endTime);
+    const timeSlot = `${normalizedStart}-${normalizedEnd}`;
+
+    if (!VALID_TIME_SLOTS.includes(timeSlot)) {
+      validationErrors.push(`Row ${i + 2}: Invalid time slot "${excelRow.startTime}-${excelRow.endTime}". Valid slots: ${VALID_TIME_SLOTS.join(', ')}`);
+      continue;
+    }
+
+    // Parse time slot for conflict check
+    const [startStr, endStr] = timeSlot.split('-');
+    const [startHour, startMin] = startStr.split(':').map(Number);
+    const [endHour, endMin] = endStr.split(':').map(Number);
 
     const startDateTime = new Date(sessionDate);
     startDateTime.setHours(startHour, startMin, 0);
@@ -100,7 +178,7 @@ try {
     const endDateTime = new Date(sessionDate);
     endDateTime.setHours(endHour, endMin, 0);
 
-    // Check for conflicts using session model validation
+    // Check for conflicts
     const conflictCheck = await sessionModel.checkConflicts(teacher._id, location._id, startDateTime, endDateTime);
     if (conflictCheck.hasConflict) {
       validationErrors.push(`Row ${i + 2}: ${conflictCheck.message}`);
@@ -111,10 +189,8 @@ try {
       userid: teacher._id,
       courseid: course._id,
       roomid: location._id,
-      start_time: startDateTime,
-      end_time: endDateTime,
       session_date: sessionDate,
-      time: `${excelRow.startTime}-${excelRow.endTime}`,
+      time: timeSlot,
       createdAt: new Date(),
       updatedAt: new Date()
     } as Omit<Session, '_id'>);
@@ -205,11 +281,13 @@ export const exportScheduleToPDF = async (teacherIds?: string[]): Promise<Buffer
           const course = await courseModel.getCourseById(session.courseid.toString());
           const location = await locationModel.getLocationById(session.roomid.toString());
 
+          const [startStr, endStr] = (session.time || '').split('-');
+
           doc.text(course?.courseName || 'N/A', col1, rowTop);
           doc.text(location?.room_name || 'N/A', col2, rowTop);
-          doc.text(new Date(session.start_time).toLocaleDateString(), col3, rowTop);
-          doc.text(new Date(session.start_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }), col4, rowTop);
-          doc.text(new Date(session.end_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }), col5, rowTop);
+          doc.text(new Date(session.session_date).toLocaleDateString(), col3, rowTop);
+          doc.text(startStr || 'N/A', col4, rowTop);
+          doc.text(endStr || 'N/A', col5, rowTop);
 
           rowTop += 20;
 
